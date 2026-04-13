@@ -2,6 +2,7 @@ package design.pattern.project.service;
 
 import java.io.IOException;
 
+import ch.qos.logback.core.model.Model;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -19,7 +20,8 @@ public class AzureOpenAIClient {
     private static AzureOpenAIClient instance;
     private final OkHttpClient httpClient;
     private final String apiKey;
-    private final String azureEndpoint;
+    private final String endpoint = "https://60099-m1xc2jq0-australiaeast.openai.azure.com/";
+    private final String deployment = "gpt-5-mini-vanilson";
     private final SystemPromptBuilder systemPromptBuilder;
     
     /**
@@ -29,13 +31,12 @@ public class AzureOpenAIClient {
     private AzureOpenAIClient() {
         this.httpClient = new OkHttpClient();
         this.apiKey = System.getenv("AZURE_API_KEY");
-        this.azureEndpoint = System.getenv("AZURE_OPENAI_ENDPOINT");
         this.systemPromptBuilder = new SystemPromptBuilder();
         
         if (this.apiKey == null || this.apiKey.isEmpty()) {
             throw new IllegalStateException("AZURE_API_KEY environment variable is not set");
         }
-        if (this.azureEndpoint == null || this.azureEndpoint.isEmpty()) {
+        if (this.endpoint == null || this.endpoint.isEmpty()) {
             throw new IllegalStateException("AZURE_OPENAI_ENDPOINT environment variable is not set");
         }
     }
@@ -80,10 +81,12 @@ public class AzureOpenAIClient {
                 "\"max_tokens\": 1024" +
                 "}";
         RequestBody body = RequestBody.create(jsonBody, mediaType);
+
+        String url = endpoint + "openai/deployments/" + deployment + "/chat/completions?api-version=2024-02-01";
         
         // Build the HTTP request
         Request request = new Request.Builder()
-                .url(this.azureEndpoint)
+                .url(url)
                 .addHeader("api-key", this.apiKey)
                 .addHeader("Content-Type", "application/json")
                 .post(body)
