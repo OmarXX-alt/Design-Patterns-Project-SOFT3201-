@@ -31,7 +31,7 @@ import java.util.List;
  */
 public class MeetingAssistantFacade {
 
-    private final AzureOpenAIClient aiClient;
+    private final AzureClient aiClient;
     private final TaskEventSystem taskEventSystem;
 
     /**
@@ -39,7 +39,7 @@ public class MeetingAssistantFacade {
      * externally in Main.java before any processing starts.
      */
     public MeetingAssistantFacade(TaskEventSystem taskEventSystem) {
-        this.aiClient = AzureOpenAIClient.getInstance();
+        this.aiClient = AzureClient.getInstance();
         this.taskEventSystem = taskEventSystem;
     }
 

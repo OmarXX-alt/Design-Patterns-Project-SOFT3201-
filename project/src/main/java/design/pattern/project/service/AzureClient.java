@@ -15,9 +15,9 @@ import okhttp3.Response;
  * This class demonstrates the Singleton design pattern by ensuring only one instance
  * of the AzureOpenAIClient is created and reused throughout the application.
  */
-public class AzureOpenAIClient {
+public class AzureClient {
     
-    private static AzureOpenAIClient instance;
+    private static AzureClient instance;
     private final OkHttpClient httpClient;
     private final String apiKey;
     private final String endpoint = "https://60099-m1xc2jq0-australiaeast.openai.azure.com/";
@@ -28,7 +28,7 @@ public class AzureOpenAIClient {
      * Private constructor - prevents instantiation from outside the class
      * Initializes the OkHttp client and retrieves the Azure API key from environment
      */
-    private AzureOpenAIClient() {
+    private AzureClient() {
         this.httpClient = new OkHttpClient();
         this.apiKey = System.getenv("AZURE_API_KEY");
         this.systemPromptBuilder = new SystemPromptBuilder();
@@ -42,14 +42,14 @@ public class AzureOpenAIClient {
     }
     
     /**
-     * getInstance() - Returns the singleton instance of AzureOpenAIClient
+     * getInstance() - Returns the singleton instance of AzureClient
      * Uses synchronized block to ensure thread-safe lazy initialization
      * 
-     * @return The singleton instance of AzureOpenAIClient
+     * @return The singleton instance of AzureClient
      */
-    public static synchronized AzureOpenAIClient getInstance() {
+    public static synchronized AzureClient getInstance() {
         if (instance == null) {
-            instance = new AzureOpenAIClient();
+            instance = new AzureClient();
         }
         return instance;
     }
