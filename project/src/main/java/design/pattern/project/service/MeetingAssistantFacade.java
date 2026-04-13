@@ -22,14 +22,14 @@ import java.util.List;
  * Internal flow:
  *   strategy.buildPrompt()
  *     → StructuredPromptBuilder wraps with JSON schema enforcement
- *     → AzureOpenAIClient.sendPrompt() (Singleton)
+ *     → AzureClient.sendPrompt() (Singleton)
  *     → JSON parsed into ActionItem objects via ActionItemBuilder (Builder)
  *     → taskEventSystem.notifyAll() fires for each task (Observer)
  *     → List<ActionItem> returned to CLI
  */
 public class MeetingAssistantFacade {
 
-    private final AzureOpenAIClient aiClient;
+    private final AzureClient aiClient;
     private final TaskEventSystem taskEventSystem;
 
     /**
@@ -37,7 +37,7 @@ public class MeetingAssistantFacade {
      * externally in Main.java before any processing starts.
      */
     public MeetingAssistantFacade(TaskEventSystem taskEventSystem) {
-        this.aiClient = AzureOpenAIClient.getInstance();
+        this.aiClient = AzureClient.getInstance();
         this.taskEventSystem = taskEventSystem;
     }
 

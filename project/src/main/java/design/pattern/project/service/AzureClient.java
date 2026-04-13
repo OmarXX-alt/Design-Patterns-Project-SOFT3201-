@@ -1,7 +1,9 @@
 package design.pattern.project.service;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -12,7 +14,7 @@ import okhttp3.Response;
  * Singleton Pattern Implementation for Azure OpenAI Client
  * 
  * This class demonstrates the Singleton design pattern by ensuring only one instance
- * of the AzureOpenAIClient is created and reused throughout the application.
+ * of the AzureClient is created and reused throughout the application.
  */
 public class AzureClient {
     
@@ -27,14 +29,33 @@ public class AzureClient {
      * Initializes the OkHttp client and retrieves the Azure API key from environment
      */
     private AzureClient() {
-        this.httpClient = new OkHttpClient();
-        this.apiKey = System.getenv("AZURE_API_KEY");
+        // Load environment variables from .env file using java-dotenv
+        // Configure to look for .env in the project subdirectory (same as APIKeyTest)
+        Dotenv dotenv = Dotenv.configure()
+            .directory("./project")  // Match the directory used in APIKeyTest
+            .ignoreIfMissing()  // Don't fail if .env doesn't exist
+            .load();
         
-        if (this.apiKey == null || this.apiKey.isEmpty()) {
-            throw new IllegalStateException("AZURE_API_KEY environment variable is not set");
+        // Initialize OkHttpClient with custom timeout settings for Azure API
+        // Default timeout (10s) may be too short for LLM inference, so we increase it
+        this.httpClient = new OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)  // Time to establish connection
+            .readTimeout(60, TimeUnit.SECONDS)     // Time to read response (LLM inference can take time)
+            .writeTimeout(30, TimeUnit.SECONDS)    // Time to write request
+            .build();
+        this.apiKey = dotenv.get("AZURE_API_KEY");
+        
+        if (this.apiKey == null || this.apiKey.isEmpty() || this.apiKey.equals("key-placeholder")) {
+            throw new IllegalStateException(
+                "❌ AZURE_API_KEY is not configured!\n" +
+                "   Please set a valid API key in the .env file:\n" +
+                "   1. Create .env file in project root (same folder as pom.xml)\n" +
+                "   2. Add: AZURE_API_KEY=your-actual-api-key\n" +
+                "   3. Restart the application"
+            );
         }
         if (this.endpoint == null || this.endpoint.isEmpty()) {
-            throw new IllegalStateException("AZURE_OPENAI_ENDPOINT environment variable is not set");
+            throw new IllegalStateException("AZURE_OPENAI_ENDPOINT is not set");
         }
     }
     
@@ -64,24 +85,28 @@ public class AzureClient {
     public String sendPrompt(String prompt) throws IOException {
         // TODO: Integration Point - Member 1 to implement Output Structuring wrap here
         
-        // Output Structuring Pattern Integration: Build system prompt enforcing JSON schema
-        String systemPrompt = StructuredPromptBuilder.buildRequest(prompt);
+        // Build the complete prompt with schema enforcement (combines user prompt + system instructions)
+        String fullPrompt = StructuredPromptBuilder.buildRequest(prompt);
         
-        // Create the request body with the prompt and system instructions
+        // Create the request body as a proper JSON message format for Azure OpenAI
         MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
-        String jsonBody = "{" +
-                "\"messages\": [" +
-                "{\"role\": \"system\", \"content\": \"" + escapeJson(systemPrompt) + "\"}," +
-                "{\"role\": \"user\", \"content\": \"" + escapeJson(prompt) + "\"}" +
-                "]," +
-                "\"temperature\": 0.7," +
-                "\"max_tokens\": 1024" +
+        
+        // Build JSON using proper structure (not string concatenation)
+        String jsonBody = "{\n" +
+                "  \"messages\": [\n" +
+                "    {\n" +
+                "      \"role\": \"user\",\n" +
+                "      \"content\": \"" + escapeJson(fullPrompt) + "\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"max_completion_tokens\": 2048\n" +
                 "}";
+        
         RequestBody body = RequestBody.create(jsonBody, mediaType);
 
         String url = endpoint + "openai/deployments/" + deployment + "/chat/completions?api-version=2024-02-01";
         
-        // Build the HTTP request
+        // Build the HTTP request with proper headers
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("api-key", this.apiKey)
@@ -92,7 +117,9 @@ public class AzureClient {
         // Execute the request and return the raw JSON response
         try (Response response = httpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new IOException("Unexpected code " + response);
+                System.err.println("[AzureClient] HTTP Error: " + response.code() + " " + response.message());
+                System.err.println("[AzureClient] Response body: " + (response.body() != null ? response.body().string() : "No body"));
+                throw new IOException("Azure API error: Code " + response.code() + " - " + response.message());
             }
             assert response.body() != null;
             return response.body().string();
