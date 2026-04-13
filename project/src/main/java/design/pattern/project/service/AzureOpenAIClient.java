@@ -20,6 +20,7 @@ public class AzureOpenAIClient {
     private final OkHttpClient httpClient;
     private final String apiKey;
     private final String azureEndpoint;
+    private final SystemPromptBuilder systemPromptBuilder;
     
     /**
      * Private constructor - prevents instantiation from outside the class
@@ -29,6 +30,7 @@ public class AzureOpenAIClient {
         this.httpClient = new OkHttpClient();
         this.apiKey = System.getenv("AZURE_API_KEY");
         this.azureEndpoint = System.getenv("AZURE_OPENAI_ENDPOINT");
+        this.systemPromptBuilder = new SystemPromptBuilder();
         
         if (this.apiKey == null || this.apiKey.isEmpty()) {
             throw new IllegalStateException("AZURE_API_KEY environment variable is not set");
@@ -55,7 +57,7 @@ public class AzureOpenAIClient {
      * sendPrompt(String prompt) - Sends a prompt to the Azure OpenAI endpoint
      * Returns the raw JSON response from the API
      * 
-     * // TODO: Integration Point - Member 1 to implement Output Structuring wrap here
+     * Integrates the Output Structuring pattern by enforcing JSON schema through system prompts
      * 
      * @param prompt The prompt string to send to Azure OpenAI
      * @return Raw JSON response as a String
@@ -64,9 +66,19 @@ public class AzureOpenAIClient {
     public String sendPrompt(String prompt) throws IOException {
         // TODO: Integration Point - Member 1 to implement Output Structuring wrap here
         
-        // Create the request body with the prompt
+        // Output Structuring Pattern Integration: Build system prompt enforcing JSON schema
+        String systemPrompt = systemPromptBuilder.buildCompletely();
+        
+        // Create the request body with the prompt and system instructions
         MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
-        String jsonBody = "{\"prompt\": \"" + escapeJson(prompt) + "\"}";
+        String jsonBody = "{" +
+                "\"messages\": [" +
+                "{\"role\": \"system\", \"content\": \"" + escapeJson(systemPrompt) + "\"}," +
+                "{\"role\": \"user\", \"content\": \"" + escapeJson(prompt) + "\"}" +
+                "]," +
+                "\"temperature\": 0.7," +
+                "\"max_tokens\": 1024" +
+                "}";
         RequestBody body = RequestBody.create(jsonBody, mediaType);
         
         // Build the HTTP request
