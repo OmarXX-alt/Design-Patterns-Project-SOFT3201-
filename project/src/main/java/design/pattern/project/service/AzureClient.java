@@ -2,7 +2,6 @@ package design.pattern.project.service;
 
 import java.io.IOException;
 
-import ch.qos.logback.core.model.Model;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -22,7 +21,6 @@ public class AzureClient {
     private final String apiKey;
     private final String endpoint = "https://60099-m1xc2jq0-australiaeast.openai.azure.com/";
     private final String deployment = "gpt-5-mini-vanilson";
-    private final StructuredPromptBuilder systemPromptBuilder;
     
     /**
      * Private constructor - prevents instantiation from outside the class
@@ -31,7 +29,6 @@ public class AzureClient {
     private AzureClient() {
         this.httpClient = new OkHttpClient();
         this.apiKey = System.getenv("AZURE_API_KEY");
-        this.systemPromptBuilder = new StructuredPromptBuilder();
         
         if (this.apiKey == null || this.apiKey.isEmpty()) {
             throw new IllegalStateException("AZURE_API_KEY environment variable is not set");
@@ -68,7 +65,7 @@ public class AzureClient {
         // TODO: Integration Point - Member 1 to implement Output Structuring wrap here
         
         // Output Structuring Pattern Integration: Build system prompt enforcing JSON schema
-        String systemPrompt = systemPromptBuilder.buildRequest(prompt);
+        String systemPrompt = StructuredPromptBuilder.buildRequest(prompt);
         
         // Create the request body with the prompt and system instructions
         MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
