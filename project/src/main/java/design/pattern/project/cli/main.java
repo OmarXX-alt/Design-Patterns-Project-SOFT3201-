@@ -91,27 +91,32 @@ public class Main {
 
         // ── 5. Processing ──────────────────────────────────────────────────
         System.out.println("\nProcessing... (calling Azure OpenAI)\n");
-        List<ActionItem> items = facade.processNotes(notes.toString(), strategy);
+        try {
+            List<ActionItem> items = facade.processNotes(notes.toString(), strategy);
 
-        // ── 6. Summary table ───────────────────────────────────────────────
-        if (items.isEmpty()) {
-            System.out.println("No action items extracted. Check AI response or try different notes.");
-        } else {
-            System.out.println("\n─── Extracted Action Items ─────────────────────────────────");
-            System.out.printf("%-4s %-35s %-15s %-12s %-8s%n",
-                    "#", "Task", "Assignee", "Deadline", "Priority");
-            System.out.println("─".repeat(78));
-            int i = 1;
-            for (ActionItem item : items) {
-                System.out.printf("%-4d %-35s %-15s %-12s %-8s%n",
-                        i++,
-                        truncate(item.getTitle(), 34),
-                        orDash(item.getAssignee()),
-                        orDash(item.getDeadline()),
-                        orDash(item.getPriority()));
+            // ── 6. Summary table ───────────────────────────────────────────────
+            if (items.isEmpty()) {
+                System.out.println("No action items extracted. Check AI response or try different notes.");
+            } else {
+                System.out.println("\n─── Extracted Action Items ─────────────────────────────────");
+                System.out.printf("%-4s %-35s %-15s %-12s %-8s%n",
+                        "#", "Task", "Assignee", "Deadline", "Priority");
+                System.out.println("─".repeat(78));
+                int i = 1;
+                for (ActionItem item : items) {
+                    System.out.printf("%-4d %-35s %-15s %-12s %-8s%n",
+                            i++,
+                            truncate(item.getTitle(), 34),
+                            orDash(item.getAssignee()),
+                            orDash(item.getDeadline()),
+                            orDash(item.getPriority()));
+                }
+                System.out.println("─".repeat(78));
+                System.out.println("Total: " + items.size() + " action item(s) extracted.");
             }
-            System.out.println("─".repeat(78));
-            System.out.println("Total: " + items.size() + " action item(s) extracted.");
+        } catch (Exception e) {
+            System.err.println("[CLI] Error processing notes: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
