@@ -1,8 +1,9 @@
-package design.pattern.project.pattern;
+package design.pattern.project.service;
 
 import design.pattern.project.model.ActionItem;
 import design.pattern.project.model.ActionItemBuilder;
-import design.pattern.project.service.AzureOpenAIClient;
+import design.pattern.project.pattern.ExtractionStrategy;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

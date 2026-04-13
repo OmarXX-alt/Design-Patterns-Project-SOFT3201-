@@ -2,6 +2,8 @@ package design.pattern.project.cli;
 
 import design.pattern.project.model.ActionItem;
 import design.pattern.project.pattern.*;
+import design.pattern.project.service.MeetingAssistantFacade;
+
 import java.util.List;
 import java.util.Scanner;
 
